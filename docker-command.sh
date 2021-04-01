@@ -61,4 +61,4 @@ exec gunicorn --log-config ${LOGGING_FILE_CONFIG} --access-logfile - \
   -t ${timeout} \
   --threads ${num_threads} \
   --bind "0.0.0.0:${server_port}" ${gunicorn_ssl_options} \
-  clustering-outliers.app:app
+  clustering_outliers.app:app
