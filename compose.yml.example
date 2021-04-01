@@ -1,0 +1,45 @@
+# vim: set syntax=yaml:
+
+version: '3.6'
+
+services:
+
+  profile:
+    image: "opertusmundi/clustering_outliers:${VERSION}"
+    build:
+      context: .
+      args:
+        VERSION: "${VERSION}"
+
+    volumes:
+    - type: 'bind'
+      source: './logs'
+      target: '/var/local/clustering_outliers/logs'
+    - type: 'bind'
+      source: './data/secret_key'
+      target: '/var/local/clustering_outliers/secret_key'
+      read_only: true
+    - type: 'bind'
+      source: './data/clustering_outliers.sqlite'
+      target: '/var/local/clustering_outliers/clustering_outliers.sqlite'
+    - type: 'bind'
+      source: './output'
+      target: '/var/local/clustering_outliers/output'
+
+    networks:
+    - 'opertusmundi_network'
+
+    ports:
+    - '5000:5000'
+
+    environment:
+      OUTPUT_DIR: '/var/local/clustering_outliers/output'
+      FLASK_ENV: "${FLASK_ENV}"
+      FLASK_DEBUG: "${FLASK_DEBUG}"
+      LOGGING_ROOT_LEVEL: 'INFO'
+      CORS: '*'
+      PYTHONUNBUFFERED: 1
+
+networks:
+  opertusmundi_network:
+    external: true
