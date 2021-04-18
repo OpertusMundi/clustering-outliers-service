@@ -11,8 +11,14 @@ from flask import Flask, send_file, abort
 from flask import make_response
 
 from . import db
-from .forms import KMeansFileForm, KMeansPathForm
-from .kmeans.kmeans import kmeams
+from .forms import KMeansFileForm, KMeansPathForm, DBScanFileForm, DBScanPathForm, AgglomerativeFileForm, \
+    AgglomerativePathForm, IsoForestFileForm, IsoForestPathForm, LOFFileForm, LOFPathForm, OCSVMPathForm, OCSVMFileForm
+from .models.agglomerative_clustering import agglomerative_clustering
+from .models.dbscan import dbscan
+from .models.isolation_forest import isolation_forest
+from .models.kmeans import kmeams
+from .models.local_outlier_factor import local_outlier_factor
+from .models.one_class_svm import one_class_svm
 from .logging import getLoggers
 from .utils import check_directory_writable, get_temp_dir, mkdir, validate_form, get_tmp_dir, create_ticket, \
     save_to_temp, uncompress_file
@@ -65,11 +71,9 @@ def executor_callback(future):
         rel_path = path.join(rel_path, ticket)
         output_path: str = path.join(getenv('OUTPUT_DIR'), rel_path)
         mkdir(output_path)
-        filepath = None
-        if job_type is JobType.KMEANS:
-            filepath = path.join(getenv('OUTPUT_DIR'), rel_path, "result.json")
-            with open(filepath, 'w') as fp:
-                json.dump(result, fp)
+        filepath = path.join(getenv('OUTPUT_DIR'), rel_path, "result.json")
+        with open(filepath, 'w') as fp:
+            json.dump(result, fp)
     else:
         filepath = None
     with app.app_context():
@@ -104,6 +108,11 @@ if getenv('CORS') is not None:
 
 class JobType(Enum):
     KMEANS = auto()
+    DBSCAN = auto()
+    AGGLO = auto()
+    ISOFOREST = auto()
+    LOCALOUTLIER = auto()
+    SVM = auto()
 
 
 @executor.job
@@ -119,6 +128,16 @@ def enqueue(ticket: str, src_path: str, form: FlaskForm, job_type: JobType) -> t
         result = None
         if job_type is JobType.KMEANS:
             result = kmeams(form, src_path)
+        elif job_type is JobType.DBSCAN:
+            result = dbscan(form, src_path)
+        elif job_type is JobType.AGGLO:
+            result = agglomerative_clustering(form, src_path)
+        elif job_type is JobType.ISOFOREST:
+            result = isolation_forest(form, src_path)
+        elif job_type is JobType.LOCALOUTLIER:
+            result = local_outlier_factor(form, src_path)
+        elif job_type is JobType.SVM:
+            result = one_class_svm(form, src_path)
     except Exception as e:
         mainLogger.error(f'Processing of ticket: {ticket} failed')
         return ticket, None, 0, str(e)
@@ -227,6 +246,226 @@ def k_means_path():
         return make_response(response, 202)
 
 
+@app.route("/dbscan/file", methods=["POST"])
+def dbscan_file():
+    form = DBScanFileForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /dbscan/file with file: {form.resource.data.filename}")
+    tmp_dir: str = get_tmp_dir("clustering_outliers")
+    ticket: str = create_ticket()
+    src_file_path: str = save_to_temp(form, tmp_dir, ticket)
+    src_file_path: str = uncompress_file(src_file_path)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = dbscan(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.DBSCAN)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
+@app.route("/dbscan/path", methods=["POST"])
+def dbscan_path():
+    form = DBScanPathForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /dbscan/path with file: {form.resource.data}")
+    src_file_path: str = form.resource.data
+    src_file_path: str = uncompress_file(src_file_path)
+
+    if not path.exists(src_file_path):
+        abort(400, FILE_NOT_FOUND_MESSAGE)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = dbscan(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        ticket: str = create_ticket()
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.DBSCAN)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
+@app.route("/agglomerative/file", methods=["POST"])
+def agglomerative_file():
+    form = AgglomerativeFileForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /agglomerative/file with file: {form.resource.data.filename}")
+    tmp_dir: str = get_tmp_dir("clustering_outliers")
+    ticket: str = create_ticket()
+    src_file_path: str = save_to_temp(form, tmp_dir, ticket)
+    src_file_path: str = uncompress_file(src_file_path)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = agglomerative_clustering(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.AGGLO)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
+@app.route("/agglomerative/path", methods=["POST"])
+def agglomerative_path():
+    form = AgglomerativePathForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /agglomerative/path with file: {form.resource.data}")
+    src_file_path: str = form.resource.data
+    src_file_path: str = uncompress_file(src_file_path)
+
+    if not path.exists(src_file_path):
+        abort(400, FILE_NOT_FOUND_MESSAGE)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = agglomerative_clustering(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        ticket: str = create_ticket()
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.AGGLO)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
+@app.route("/isolation_forest/file", methods=["POST"])
+def isolation_forest_file():
+    form = IsoForestFileForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /isolation_forest/file with file: {form.resource.data.filename}")
+    tmp_dir: str = get_tmp_dir("clustering_outliers")
+    ticket: str = create_ticket()
+    src_file_path: str = save_to_temp(form, tmp_dir, ticket)
+    src_file_path: str = uncompress_file(src_file_path)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = isolation_forest(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.ISOFOREST)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
+@app.route("/isolation_forest/path", methods=["POST"])
+def isolation_forest_path():
+    form = IsoForestPathForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /isolation_forest/path with file: {form.resource.data}")
+    src_file_path: str = form.resource.data
+    src_file_path: str = uncompress_file(src_file_path)
+
+    if not path.exists(src_file_path):
+        abort(400, FILE_NOT_FOUND_MESSAGE)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = isolation_forest(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        ticket: str = create_ticket()
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.ISOFOREST)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
+@app.route("/local_outlier_factor/file", methods=["POST"])
+def local_outlier_factor_file():
+    form = LOFFileForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /local_outlier_factor/file with file: {form.resource.data.filename}")
+    tmp_dir: str = get_tmp_dir("clustering_outliers")
+    ticket: str = create_ticket()
+    src_file_path: str = save_to_temp(form, tmp_dir, ticket)
+    src_file_path: str = uncompress_file(src_file_path)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = local_outlier_factor(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.LOCALOUTLIER)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
+@app.route("/local_outlier_factor/path", methods=["POST"])
+def local_outlier_factor_path():
+    form = LOFPathForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /local_outlier_factor/path with file: {form.resource.data}")
+    src_file_path: str = form.resource.data
+    src_file_path: str = uncompress_file(src_file_path)
+
+    if not path.exists(src_file_path):
+        abort(400, FILE_NOT_FOUND_MESSAGE)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = local_outlier_factor(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        ticket: str = create_ticket()
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.LOCALOUTLIER)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
+@app.route("/one_class_svm/file", methods=["POST"])
+def svm_file():
+    form = OCSVMFileForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /one_class_svm/file with file: {form.resource.data.filename}")
+    tmp_dir: str = get_tmp_dir("clustering_outliers")
+    ticket: str = create_ticket()
+    src_file_path: str = save_to_temp(form, tmp_dir, ticket)
+    src_file_path: str = uncompress_file(src_file_path)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = one_class_svm(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.SVM)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
+@app.route("/one_class_svm/path", methods=["POST"])
+def svm_path():
+    form = OCSVMPathForm()
+    validate_form(form, mainLogger)
+    mainLogger.info(f"Starting /one_class_svm/path with file: {form.resource.data}")
+    src_file_path: str = form.resource.data
+    src_file_path: str = uncompress_file(src_file_path)
+
+    if not path.exists(src_file_path):
+        abort(400, FILE_NOT_FOUND_MESSAGE)
+
+    # Immediate results
+    if form.response.data == "prompt":
+        response = one_class_svm(form, src_file_path)
+        return make_response(response, 200)
+    # Wait for results
+    else:
+        ticket: str = create_ticket()
+        enqueue.submit(ticket, src_file_path, form=form, job_type=JobType.SVM)
+        response = {"ticket": ticket, "endpoint": f"/resource/{ticket}", "status": f"/status/{ticket}"}
+        return make_response(response, 202)
+
+
 @app.route("/status/<ticket>")
 def status(ticket):
     """Get the status of a specific ticket.
@@ -331,7 +570,17 @@ def resource(ticket):
 
 # Views
 with app.test_request_context():
+    spec.path(view=svm_path)
+    spec.path(view=svm_file)
+    spec.path(view=agglomerative_path)
+    spec.path(view=agglomerative_file)
+    spec.path(view=dbscan_path)
+    spec.path(view=dbscan_file)
+    spec.path(view=isolation_forest_path)
+    spec.path(view=isolation_forest_file)
     spec.path(view=k_means_file)
     spec.path(view=k_means_path)
+    spec.path(view=local_outlier_factor_path)
+    spec.path(view=local_outlier_factor_file)
     spec.path(view=status)
     spec.path(view=resource)

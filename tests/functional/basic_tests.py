@@ -53,8 +53,8 @@ def test_get_health_check():
 
 
 def test_file_kmeans_csv():
-    payload = {'resource': (open(csv_file, 'rb'), 'sample.csv'), "resource_type": "csv", "id_column_name": "ID", "column_names-0": "LON",
-               "column_names-1": "LAT"}
+    payload = {'resource': (open(csv_file, 'rb'), 'sample.csv'), "resource_type": "csv", "id_column": "ID", "columns-0": "LON",
+               "columns-1": "LAT"}
     with app.test_client() as client:
         res = client.post('/kmeans/file', data=payload, content_type='multipart/form-data')
         assert res.status_code == 200
@@ -72,8 +72,7 @@ def test_file_kmeans_shp():
 
 
 def test_path_kmeans_csv():
-    payload = {"resource": csv_file, "resource_type": "csv", "id_column_name": "ID", "column_names-0": "LON",
-               "column_names-1": "LAT"}
+    payload = {"resource": csv_file, "resource_type": "csv", "id_column": "ID", "columns-0": "LON", "columns-1": "LAT"}
     with app.test_client() as client:
         res = client.post('/kmeans/path', data=payload, content_type='multipart/form-data')
         assert res.status_code == 200
@@ -88,3 +87,98 @@ def test_path_kmeans_shp():
         assert res.status_code == 200
         r = res.get_json()
         assert set(r.keys()) == {'cluster_centers', 'ids', 'labels'}
+
+
+def test_file_dbscan_csv():
+    payload = {'resource': (open(csv_file, 'rb'), 'sample.csv'), "resource_type": "csv", "id_column": "ID", "columns-0": "LON",
+               "columns-1": "LAT"}
+    with app.test_client() as client:
+        res = client.post('/dbscan/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert set(r.keys()) == {'core_sample_indices', 'components', 'ids', 'labels'}
+
+
+def test_file_dbscan_shp():
+    payload = {'resource': (open(shp_file, 'rb'), 'sample.zip'), "resource_type": "shp"}
+    with app.test_client() as client:
+        res = client.post('/dbscan/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert set(r.keys()) == {'core_sample_indices', 'components', 'ids', 'labels'}
+
+
+def test_file_agglomerative_csv():
+    payload = {'resource': (open(csv_file, 'rb'), 'sample.csv'), "resource_type": "csv", "id_column": "ID", "columns-0": "LON",
+               "columns-1": "LAT"}
+    with app.test_client() as client:
+        res = client.post('/agglomerative/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert set(r.keys()) == {'n_clusters', 'n_leaves', 'n_connected_components', 'children', 'ids', 'labels'}
+
+
+def test_file_agglomerative_shp():
+    payload = {'resource': (open(shp_file, 'rb'), 'sample.zip'), "resource_type": "shp"}
+    with app.test_client() as client:
+        res = client.post('/agglomerative/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert set(r.keys()) == {'n_clusters', 'n_leaves', 'n_connected_components', 'children', 'ids', 'labels'}
+
+
+def test_file_isolation_forest_csv():
+    payload = {'resource': (open(csv_file, 'rb'), 'sample.csv'), "resource_type": "csv", "id_column": "ID", "columns-0": "LON",
+               "columns-1": "LAT"}
+    with app.test_client() as client:
+        res = client.post('/isolation_forest/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert isinstance(r, dict)
+
+
+def test_file_isolation_forest_shp():
+    payload = {'resource': (open(shp_file, 'rb'), 'sample.zip'), "resource_type": "shp"}
+    with app.test_client() as client:
+        res = client.post('/isolation_forest/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert isinstance(r, dict)
+
+
+def test_file_local_outlier_factor_csv():
+    payload = {'resource': (open(csv_file, 'rb'), 'sample.csv'), "resource_type": "csv", "id_column": "ID", "columns-0": "LON",
+               "columns-1": "LAT"}
+    with app.test_client() as client:
+        res = client.post('/local_outlier_factor/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert isinstance(r, dict)
+
+
+def test_file_local_outlier_factor_shp():
+    payload = {'resource': (open(shp_file, 'rb'), 'sample.zip'), "resource_type": "shp"}
+    with app.test_client() as client:
+        res = client.post('/local_outlier_factor/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert isinstance(r, dict)
+
+
+def test_file_one_class_svm_csv():
+    payload = {'resource': (open(csv_file, 'rb'), 'sample.csv'), "resource_type": "csv", "id_column": "ID", "columns-0": "LON",
+               "columns-1": "LAT"}
+    with app.test_client() as client:
+        res = client.post('/one_class_svm/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert isinstance(r, dict)
+
+
+def test_file_one_class_svm_shp():
+    payload = {'resource': (open(shp_file, 'rb'), 'sample.zip'), "resource_type": "shp"}
+    with app.test_client() as client:
+        res = client.post('/one_class_svm/file', data=payload, content_type='multipart/form-data')
+        assert res.status_code == 200
+        r = res.get_json()
+        assert isinstance(r, dict)

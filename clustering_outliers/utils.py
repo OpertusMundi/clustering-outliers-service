@@ -108,5 +108,6 @@ def has_header(ds_path: str):
     """ Returns the delimiter of the csv file """
     if ds_path.split('.')[-1] != 'csv':
         return None
-    with open(ds_path) as f:
-        return csv.Sniffer().has_header(f.read(1024))
+    sniffer = csv.Sniffer()
+    sample_bytes = 32
+    return sniffer.has_header(open(ds_path).read(sample_bytes))
