@@ -1,0 +1,1614 @@
+{
+    "externalDocs": {
+        "description": "GitHub",
+        "url": "https://github.com/OpertusMundi/clustering-outliers-service"
+    },
+    "info": {
+        "contact": {
+            "email": "kpsarakis94@gmail.com"
+        },
+        "description": "",
+        "title": "Clustering and Outlier Detection API",
+        "version": "0.1.1"
+    },
+    "openapi": "3.0.2",
+    "paths": {
+        "/agglomerative/file": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "dist_measure": {
+                                        "default": "euclidean",
+                                        "description": "The distance measure used",
+                                        "type": "string"
+                                    },
+                                    "dist_threshold": {
+                                        "default": "euclidean",
+                                        "description": "The distance measure used",
+                                        "type": "string"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "k": {
+                                        "description": "The number of clusters",
+                                        "type": "integer"
+                                    },
+                                    "linkage": {
+                                        "description": "The linkage type",
+                                        "enum": [
+                                            "ward",
+                                            "complete",
+                                            "average",
+                                            "single"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file.",
+                                        "format": "binary",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "children": {
+                                            "description": "The children produced in the clustering process",
+                                            "type": "array"
+                                        },
+                                        "ids": {
+                                            "description": "The row ids",
+                                            "type": "array"
+                                        },
+                                        "labels": {
+                                            "description": "The row labels",
+                                            "type": "array"
+                                        },
+                                        "n_clusters": {
+                                            "description": "The number of clusters",
+                                            "type": "integer"
+                                        },
+                                        "n_connected_components": {
+                                            "description": "The number of connected components",
+                                            "type": "integer"
+                                        },
+                                        "n_leaves": {
+                                            "description": "The number of leaves",
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "agglomerative clustering completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but clustering has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform agglomerative clustering to a geospatial file that is provided with the request",
+                "tags": [
+                    "agglomerative"
+                ]
+            }
+        },
+        "/agglomerative/path": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "dist_measure": {
+                                        "default": "euclidean",
+                                        "description": "The distance measure used",
+                                        "type": "string"
+                                    },
+                                    "dist_threshold": {
+                                        "default": "euclidean",
+                                        "description": "The distance measure used",
+                                        "type": "string"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "k": {
+                                        "description": "The number of clusters",
+                                        "type": "integer"
+                                    },
+                                    "linkage": {
+                                        "description": "The linkage type",
+                                        "enum": [
+                                            "ward",
+                                            "complete",
+                                            "average",
+                                            "single"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file path.",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "children": {
+                                            "description": "The children produced in the clustering process",
+                                            "type": "array"
+                                        },
+                                        "ids": {
+                                            "description": "The row ids",
+                                            "type": "array"
+                                        },
+                                        "labels": {
+                                            "description": "The row labels",
+                                            "type": "array"
+                                        },
+                                        "n_clusters": {
+                                            "description": "The number of clusters",
+                                            "type": "integer"
+                                        },
+                                        "n_connected_components": {
+                                            "description": "The number of connected components",
+                                            "type": "integer"
+                                        },
+                                        "n_leaves": {
+                                            "description": "The number of leaves",
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "agglomerative clustering completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but clustering has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform agglomerative clustering to a geospatial file that its path is provided with the request",
+                "tags": [
+                    "agglomerative"
+                ]
+            }
+        },
+        "/dbscan/file": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "dist_measure": {
+                                        "default": "euclidean",
+                                        "description": "The distance measure used",
+                                        "type": "string"
+                                    },
+                                    "epsilon": {
+                                        "description": "The epsilon parameter of dbscan",
+                                        "type": "float"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "min_samples": {
+                                        "description": "The minimum number of points required to form a dense region.",
+                                        "type": "integer"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file.",
+                                        "format": "binary",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "components": {
+                                            "description": "The components",
+                                            "type": "array"
+                                        },
+                                        "core_sample_indices": {
+                                            "description": "The core sample indices",
+                                            "type": "array"
+                                        },
+                                        "ids": {
+                                            "description": "The row ids",
+                                            "type": "array"
+                                        },
+                                        "labels": {
+                                            "description": "The row labels",
+                                            "type": "array"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "dbscan completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but clustering has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform dbscan clustering to a geospatial file that is provided with the request",
+                "tags": [
+                    "dbscan"
+                ]
+            }
+        },
+        "/dbscan/path": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "dist_measure": {
+                                        "default": "euclidean",
+                                        "description": "The distance measure used",
+                                        "type": "string"
+                                    },
+                                    "epsilon": {
+                                        "description": "The epsilon parameter of dbscan",
+                                        "type": "float"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "min_samples": {
+                                        "description": "The minimum number of points required to form a dense region.",
+                                        "type": "integer"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file path.",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "components": {
+                                            "description": "The components",
+                                            "type": "array"
+                                        },
+                                        "core_sample_indices": {
+                                            "description": "The core sample indices",
+                                            "type": "array"
+                                        },
+                                        "ids": {
+                                            "description": "The row ids",
+                                            "type": "array"
+                                        },
+                                        "labels": {
+                                            "description": "The row labels",
+                                            "type": "array"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "dbscan completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but clustering has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform dbscan clustering to a geospatial file that its path is provided with the request",
+                "tags": [
+                    "dbscan"
+                ]
+            }
+        },
+        "/isolation_forest/file": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "dist_measure": {
+                                        "default": "euclidean",
+                                        "description": "The distance measure used",
+                                        "type": "string"
+                                    },
+                                    "epsilon": {
+                                        "description": "The epsilon parameter of dbscan",
+                                        "type": "float"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "min_samples": {
+                                        "description": "The minimum number of points required to form a dense region.",
+                                        "type": "integer"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file.",
+                                        "format": "binary",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "outliers": {
+                                            "description": "The detected outliers",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "isolation forest completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but outlier detection has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform outlier detection with isolation forest to a geospatial file that is provided with the request",
+                "tags": [
+                    "isolation_forest"
+                ]
+            }
+        },
+        "/isolation_forest/path": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "max_samples": {
+                                        "description": "The maximum samples",
+                                        "type": "integer"
+                                    },
+                                    "n_estimators": {
+                                        "description": "The number of estimators",
+                                        "type": "integer"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file path.",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "outliers": {
+                                            "description": "The detected outliers",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "isolation forest completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but outlier detection has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform outlier detection with isolation forest to a geospatial file that its path is provided with the request",
+                "tags": [
+                    "isolation_forest"
+                ]
+            }
+        },
+        "/kmeans/file": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "dist_measure": {
+                                        "default": "euclidean",
+                                        "description": "The distance measure used",
+                                        "type": "string"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "k": {
+                                        "description": "The number of expected clusters, leave empty to calculate this automatically",
+                                        "type": "integer"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file.",
+                                        "format": "binary",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "cluster_centers": {
+                                            "description": "The cluster centers",
+                                            "type": "array"
+                                        },
+                                        "ids": {
+                                            "description": "The row ids",
+                                            "type": "array"
+                                        },
+                                        "labels": {
+                                            "description": "The row labels",
+                                            "type": "array"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "kmeans completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but clustering has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform kmeans clustering to a geospatial file that is provided with the request",
+                "tags": [
+                    "kmeans"
+                ]
+            }
+        },
+        "/kmeans/path": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "dist_measure": {
+                                        "default": "euclidean",
+                                        "description": "The distance measure used",
+                                        "type": "string"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "k": {
+                                        "description": "The number of expected clusters, leave empty to calculate this automatically",
+                                        "type": "integer"
+                                    },
+                                    "resource": {
+                                        "description": "The path of the geospatial file.",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "cluster_centers": {
+                                            "description": "The cluster centers",
+                                            "type": "array"
+                                        },
+                                        "ids": {
+                                            "description": "The row ids",
+                                            "type": "array"
+                                        },
+                                        "labels": {
+                                            "description": "The row labels",
+                                            "type": "array"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "kmeans completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but clustering has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform kmeans clustering to a geospatial file that its path provided with the request",
+                "tags": [
+                    "kmeans"
+                ]
+            }
+        },
+        "/local_outlier_factor/file": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "n_neighbors": {
+                                        "description": "The number of neighbors",
+                                        "type": "integer"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file.",
+                                        "format": "binary",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "outliers": {
+                                            "description": "The detected outliers",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "local outlier factor completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but outlier detection has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform local outlier factor anomaly detection to a geospatial file that is provided with the request",
+                "tags": [
+                    "local_outlier_factor"
+                ]
+            }
+        },
+        "/local_outlier_factor/path": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "n_neighbors": {
+                                        "description": "The number of neighbors",
+                                        "type": "integer"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file path.",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "outliers": {
+                                            "description": "The detected outliers",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "local outlier factor completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but outlier detection has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform local outlier factor anomaly detection to a geospatial file that its path is provided with the request",
+                "tags": [
+                    "local_outlier_factor"
+                ]
+            }
+        },
+        "/one_class_svm/file": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "degree": {
+                                        "description": "One class svm degree",
+                                        "type": "integer"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file.",
+                                        "format": "binary",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "outliers": {
+                                            "description": "The detected outliers",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "one class svm completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but outlier detection has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform one class svm anomaly detection to a geospatial file that is provided with the request",
+                "tags": [
+                    "one_class_svm"
+                ]
+            }
+        },
+        "/one_class_svm/path": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "properties": {
+                                    "columns": {
+                                        "default": null,
+                                        "description": "The columns to cluster",
+                                        "type": "array"
+                                    },
+                                    "degree": {
+                                        "description": "One class svm degree",
+                                        "type": "integer"
+                                    },
+                                    "id_column": {
+                                        "description": "The column that will serve as the id",
+                                        "type": "string"
+                                    },
+                                    "resource": {
+                                        "description": "The geospatial file path.",
+                                        "type": "string"
+                                    },
+                                    "resource_type": {
+                                        "description": "The geospatial file type",
+                                        "enum": [
+                                            "csv",
+                                            "shp"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "response": {
+                                        "description": "Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.",
+                                        "enum": [
+                                            "prompt",
+                                            "deferred"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "resource",
+                                    "resource_type"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "outliers": {
+                                            "description": "The detected outliers",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "one class svm completed and returned."
+                    },
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoint": {
+                                            "description": "The *resource* endpoint to get the resulting resource when ready.",
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "description": "The *status* endpoint to poll for the status of the request.",
+                                            "type": "string"
+                                        },
+                                        "ticket": {
+                                            "description": "The ticket corresponding to the request.",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Accepted for processing, but outlier detection has not been completed.",
+                        "links": {
+                            "GetStatus": {
+                                "description": "The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.",
+                                "operationId": "getStatus",
+                                "parameters": {
+                                    "ticket": "$response.body#/ticket"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Client error."
+                    }
+                },
+                "summary": "Perform one class svm anomaly detection to a geospatial file that its path is provided with the request",
+                "tags": [
+                    "one_class_svm"
+                ]
+            }
+        },
+        "/resource/{ticket}": {
+            "get": {
+                "description": "Returns the resource resulted from a task request corresponding to a specific ticket.",
+                "parameters": [
+                    {
+                        "description": "The ticket of the request",
+                        "in": "path",
+                        "name": "ticket",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/x-tar": {
+                                "schema": {
+                                    "format": "binary",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "The compressed spatial file."
+                    },
+                    "404": {
+                        "description": "Ticket not found or task has not been completed."
+                    },
+                    "507": {
+                        "description": "Resource does not exist."
+                    }
+                },
+                "summary": "Get the resource associated to a task request.",
+                "tags": [
+                    "Resource"
+                ]
+            }
+        },
+        "/status/{ticket}": {
+            "get": {
+                "description": "Returns the status of a request corresponding to a specific ticket.",
+                "operationId": "getStatus",
+                "parameters": [
+                    {
+                        "description": "The ticket of the request",
+                        "in": "path",
+                        "name": "ticket",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "comment": {
+                                            "description": "If profiling has failed, a short comment describing the reason.",
+                                            "type": "string"
+                                        },
+                                        "completed": {
+                                            "description": "Whether profiling process has been completed or not.",
+                                            "type": "boolean"
+                                        },
+                                        "execution_time(s)": {
+                                            "description": "The execution time in seconds.",
+                                            "type": "integer"
+                                        },
+                                        "requested": {
+                                            "description": "The timestamp of the request.",
+                                            "format": "datetime",
+                                            "type": "string"
+                                        },
+                                        "success": {
+                                            "description": "Whether profiling process completed successfully.",
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Ticket found and status returned."
+                    },
+                    "404": {
+                        "description": "Ticket not found."
+                    }
+                },
+                "summary": "Get the status of a task request.",
+                "tags": [
+                    "Status"
+                ]
+            }
+        }
+    }
+}

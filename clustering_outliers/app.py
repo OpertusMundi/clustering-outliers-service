@@ -43,7 +43,7 @@ spec = APISpec(
     version=getenv('VERSION'),
     info=dict(
         description="",
-        contact={"email": ""}
+        contact={"email": "kpsarakis94@gmail.com"}
     ),
     externalDocs={"description": "GitHub", "url": "https://github.com/OpertusMundi/clustering-outliers-service"},
     openapi_version="3.0.2",
@@ -125,7 +125,6 @@ def enqueue(ticket: str, src_path: str, form: FlaskForm, job_type: JobType) -> t
     dbc.close()
     mainLogger.info(f'Starting processing ticket: {ticket}')
     try:
-        result = None
         if job_type is JobType.KMEANS:
             result = kmeams(form, src_path)
         elif job_type is JobType.DBSCAN:
@@ -138,6 +137,8 @@ def enqueue(ticket: str, src_path: str, form: FlaskForm, job_type: JobType) -> t
             result = local_outlier_factor(form, src_path)
         elif job_type is JobType.SVM:
             result = one_class_svm(form, src_path)
+        else:
+            result = None
     except Exception as e:
         mainLogger.error(f'Processing of ticket: {ticket} failed')
         return ticket, None, 0, str(e)
@@ -158,7 +159,7 @@ def health_check():
     ---
     get:
       tags:
-      - Health
+        - Health
       summary: Get health status
       description: 'Get health status'
       operationId: 'getHealth'
@@ -204,6 +205,90 @@ def health_check():
 
 @app.route("/kmeans/file", methods=["POST"])
 def k_means_file():
+    """Perform kmeans clustering to a geospatial file that is provided with the request
+            ---
+            post:
+              summary: Perform kmeans clustering to a geospatial file that is provided with the request
+              tags:
+                - kmeans
+              requestBody:
+                required: true
+                content:
+                  multipart/form-data:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          format: binary
+                          description: The geospatial file.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        k:
+                          type: integer
+                          description: The number of expected clusters, leave empty to calculate this automatically
+                        dist_measure:
+                          type: string
+                          default: euclidean
+                          description: The distance measure used
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: kmeans completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            cluster_centers:
+                              type: array
+                              description: The cluster centers
+                            ids:
+                              type: array
+                              description: The row ids
+                            labels:
+                              type: array
+                              description: The row labels
+                202:
+                  description: Accepted for processing, but clustering has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = KMeansFileForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /kmeans/file with file: {form.resource.data.filename}")
@@ -225,6 +310,89 @@ def k_means_file():
 
 @app.route("/kmeans/path", methods=["POST"])
 def k_means_path():
+    """Perform kmeans clustering to a geospatial file that its path provided with the request
+            ---
+            post:
+              summary: Perform kmeans clustering to a geospatial file that its path provided with the request
+              tags:
+                - kmeans
+              requestBody:
+                required: true
+                content:
+                  application/x-www-form-urlencoded:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          description: The path of the geospatial file.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        k:
+                          type: integer
+                          description: The number of expected clusters, leave empty to calculate this automatically
+                        dist_measure:
+                          type: string
+                          default: euclidean
+                          description: The distance measure used
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: kmeans completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            cluster_centers:
+                              type: array
+                              description: The cluster centers
+                            ids:
+                              type: array
+                              description: The row ids
+                            labels:
+                              type: array
+                              description: The row labels
+                202:
+                  description: Accepted for processing, but clustering has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = KMeansPathForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /kmeans/path with file: {form.resource.data}")
@@ -248,6 +416,96 @@ def k_means_path():
 
 @app.route("/dbscan/file", methods=["POST"])
 def dbscan_file():
+    """Perform dbscan clustering to a geospatial file that is provided with the request
+            ---
+            post:
+              summary: Perform dbscan clustering to a geospatial file that is provided with the request
+              tags:
+                - dbscan
+              requestBody:
+                required: true
+                content:
+                  multipart/form-data:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          format: binary
+                          description: The geospatial file.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        epsilon:
+                          type: float
+                          description: The epsilon parameter of dbscan
+                        min_samples:
+                            type: integer
+                            description: The minimum number of points required to form a dense region.
+                        dist_measure:
+                          type: string
+                          default: euclidean
+                          description: The distance measure used
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: dbscan completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            core_sample_indices:
+                              type: array
+                              description: The core sample indices
+                            components:
+                                type: array
+                                description: The components
+                            ids:
+                              type: array
+                              description: The row ids
+                            labels:
+                              type: array
+                              description: The row labels
+                202:
+                  description: Accepted for processing, but clustering has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = DBScanFileForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /dbscan/file with file: {form.resource.data.filename}")
@@ -269,6 +527,110 @@ def dbscan_file():
 
 @app.route("/dbscan/path", methods=["POST"])
 def dbscan_path():
+    """Perform dbscan clustering to a geospatial file that its path is provided with the request
+        ---
+        post:
+          summary: >-
+            Perform dbscan clustering to a geospatial file that its path is provided
+            with the request
+          tags:
+            - dbscan
+          requestBody:
+            required: true
+            content:
+              application/x-www-form-urlencoded:
+                schema:
+                  type: object
+                  properties:
+                    resource:
+                      type: string
+                      description: The geospatial file path.
+                    resource_type:
+                      type: string
+                      enum:
+                        - csv
+                        - shp
+                      description: The geospatial file type
+                    response:
+                      type: string
+                      enum:
+                        - prompt
+                        - deferred
+                      description: >-
+                        Determines whether the clustering process should be promptly
+                        initiated (*prompt*) or queued (*deferred*). In the first case,
+                        the response waits for the result, in the second the response is
+                        immediate returning a ticket corresponding to the request.
+                    columns:
+                      type: array
+                      default: null
+                      description: The columns to cluster
+                    id_column:
+                      type: string
+                      description: The column that will serve as the id
+                    epsilon:
+                      type: float
+                      description: The epsilon parameter of dbscan
+                    min_samples:
+                      type: integer
+                      description: The minimum number of points required to form a dense region.
+                    dist_measure:
+                      type: string
+                      default: euclidean
+                      description: The distance measure used
+                  required:
+                    - resource
+                    - resource_type
+          responses:
+            '200':
+              description: dbscan completed and returned.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      core_sample_indices:
+                        type: array
+                        description: The core sample indices
+                      components:
+                        type: array
+                        description: The components
+                      ids:
+                        type: array
+                        description: The row ids
+                      labels:
+                        type: array
+                        description: The row labels
+            '202':
+              description: 'Accepted for processing, but clustering has not been completed.'
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      ticket:
+                        type: string
+                        description: The ticket corresponding to the request.
+                      endpoint:
+                        type: string
+                        description: >-
+                          The *resource* endpoint to get the resulting resource when
+                          ready.
+                      status:
+                        type: string
+                        description: The *status* endpoint to poll for the status of the request.
+              links:
+                GetStatus:
+                  operationId: getStatus
+                  parameters:
+                    ticket: '$response.body#/ticket'
+                  description: >-
+                    The `ticket` value returned in the response can be used as the
+                    `ticket` parameter in `GET /status/{ticket}`.
+            '400':
+              description: Client error.
+
+    """
     form = DBScanPathForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /dbscan/path with file: {form.resource.data}")
@@ -292,6 +654,107 @@ def dbscan_path():
 
 @app.route("/agglomerative/file", methods=["POST"])
 def agglomerative_file():
+    """Perform agglomerative clustering to a geospatial file that is provided with the request
+            ---
+            post:
+              summary: Perform agglomerative clustering to a geospatial file that is provided with the request
+              tags:
+                - agglomerative
+              requestBody:
+                required: true
+                content:
+                  multipart/form-data:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          format: binary
+                          description: The geospatial file.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        k:
+                          type: integer
+                          description: The number of clusters
+                        linkage:
+                            type: string
+                            enum: [ward, complete, average, single]
+                            description: The linkage type
+                        dist_threshold:
+                          type: string
+                          default: euclidean
+                          description: The distance measure used
+                        dist_measure:
+                          type: string
+                          default: euclidean
+                          description: The distance measure used
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: agglomerative clustering completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            n_clusters:
+                              type: integer
+                              description: The number of clusters
+                            n_leaves:
+                                type: integer
+                                description: The number of leaves
+                            n_connected_components:
+                              type: integer
+                              description: The number of connected components
+                            children:
+                              type: array
+                              description: The children produced in the clustering process
+                            ids:
+                              type: array
+                              description: The row ids
+                            labels:
+                              type: array
+                              description: The row labels
+                202:
+                  description: Accepted for processing, but clustering has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = AgglomerativeFileForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /agglomerative/file with file: {form.resource.data.filename}")
@@ -313,6 +776,106 @@ def agglomerative_file():
 
 @app.route("/agglomerative/path", methods=["POST"])
 def agglomerative_path():
+    """Perform agglomerative clustering to a geospatial file that its path is provided with the request
+            ---
+            post:
+              summary: Perform agglomerative clustering to a geospatial file that its path is provided with the request
+              tags:
+                - agglomerative
+              requestBody:
+                required: true
+                content:
+                  application/x-www-form-urlencoded:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          description: The geospatial file path.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the clustering process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        k:
+                          type: integer
+                          description: The number of clusters
+                        linkage:
+                            type: string
+                            enum: [ward, complete, average, single]
+                            description: The linkage type
+                        dist_threshold:
+                          type: string
+                          default: euclidean
+                          description: The distance measure used
+                        dist_measure:
+                          type: string
+                          default: euclidean
+                          description: The distance measure used
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: agglomerative clustering completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            n_clusters:
+                              type: integer
+                              description: The number of clusters
+                            n_leaves:
+                                type: integer
+                                description: The number of leaves
+                            n_connected_components:
+                              type: integer
+                              description: The number of connected components
+                            children:
+                              type: array
+                              description: The children produced in the clustering process
+                            ids:
+                              type: array
+                              description: The row ids
+                            labels:
+                              type: array
+                              description: The row labels
+                202:
+                  description: Accepted for processing, but clustering has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = AgglomerativePathForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /agglomerative/path with file: {form.resource.data}")
@@ -336,6 +899,87 @@ def agglomerative_path():
 
 @app.route("/isolation_forest/file", methods=["POST"])
 def isolation_forest_file():
+    """Perform outlier detection with isolation forest to a geospatial file that is provided with the request
+            ---
+            post:
+              summary: Perform outlier detection with isolation forest to a geospatial file that is provided with the request
+              tags:
+                - isolation_forest
+              requestBody:
+                required: true
+                content:
+                  multipart/form-data:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          format: binary
+                          description: The geospatial file.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        epsilon:
+                          type: float
+                          description: The epsilon parameter of dbscan
+                        min_samples:
+                            type: integer
+                            description: The minimum number of points required to form a dense region.
+                        dist_measure:
+                          type: string
+                          default: euclidean
+                          description: The distance measure used
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: isolation forest completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            outliers:
+                              type: object
+                              description: The detected outliers
+                202:
+                  description: Accepted for processing, but outlier detection has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = IsoForestFileForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /isolation_forest/file with file: {form.resource.data.filename}")
@@ -357,6 +1001,82 @@ def isolation_forest_file():
 
 @app.route("/isolation_forest/path", methods=["POST"])
 def isolation_forest_path():
+    """Perform outlier detection with isolation forest to a geospatial file that its path is provided with the request
+            ---
+            post:
+              summary: Perform outlier detection with isolation forest to a geospatial file that its path is provided with the request
+              tags:
+                - isolation_forest
+              requestBody:
+                required: true
+                content:
+                  application/x-www-form-urlencoded:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          description: The geospatial file path.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        n_estimators:
+                          type: integer
+                          description: The number of estimators
+                        max_samples:
+                            type: integer
+                            description: The maximum samples
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: isolation forest completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            outliers:
+                              type: object
+                              description: The detected outliers
+                202:
+                  description: Accepted for processing, but outlier detection has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = IsoForestPathForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /isolation_forest/path with file: {form.resource.data}")
@@ -380,6 +1100,80 @@ def isolation_forest_path():
 
 @app.route("/local_outlier_factor/file", methods=["POST"])
 def local_outlier_factor_file():
+    """Perform local outlier factor anomaly detection to a geospatial file that is provided with the request
+            ---
+            post:
+              summary: Perform local outlier factor anomaly detection to a geospatial file that is provided with the request
+              tags:
+                - local_outlier_factor
+              requestBody:
+                required: true
+                content:
+                  multipart/form-data:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          format: binary
+                          description: The geospatial file.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        n_neighbors:
+                          type: integer
+                          description: The number of neighbors
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: local outlier factor completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            outliers:
+                              type: object
+                              description: The detected outliers
+                202:
+                  description: Accepted for processing, but outlier detection has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = LOFFileForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /local_outlier_factor/file with file: {form.resource.data.filename}")
@@ -401,6 +1195,79 @@ def local_outlier_factor_file():
 
 @app.route("/local_outlier_factor/path", methods=["POST"])
 def local_outlier_factor_path():
+    """Perform local outlier factor anomaly detection to a geospatial file that its path is provided with the request
+            ---
+            post:
+              summary: Perform local outlier factor anomaly detection to a geospatial file that its path is provided with the request
+              tags:
+                - local_outlier_factor
+              requestBody:
+                required: true
+                content:
+                  application/x-www-form-urlencoded:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          description: The geospatial file path.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        n_neighbors:
+                          type: integer
+                          description: The number of neighbors
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: local outlier factor completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            outliers:
+                              type: object
+                              description: The detected outliers
+                202:
+                  description: Accepted for processing, but outlier detection has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = LOFPathForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /local_outlier_factor/path with file: {form.resource.data}")
@@ -424,6 +1291,80 @@ def local_outlier_factor_path():
 
 @app.route("/one_class_svm/file", methods=["POST"])
 def svm_file():
+    """Perform one class svm anomaly detection to a geospatial file that is provided with the request
+            ---
+            post:
+              summary: Perform one class svm anomaly detection to a geospatial file that is provided with the request
+              tags:
+                - one_class_svm
+              requestBody:
+                required: true
+                content:
+                  multipart/form-data:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          format: binary
+                          description: The geospatial file.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        degree:
+                          type: integer
+                          description: One class svm degree
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: one class svm completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            outliers:
+                              type: object
+                              description: The detected outliers
+                202:
+                  description: Accepted for processing, but outlier detection has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = OCSVMFileForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /one_class_svm/file with file: {form.resource.data.filename}")
@@ -445,6 +1386,79 @@ def svm_file():
 
 @app.route("/one_class_svm/path", methods=["POST"])
 def svm_path():
+    """Perform one class svm anomaly detection to a geospatial file that its path is provided with the request
+            ---
+            post:
+              summary: Perform one class svm anomaly detection to a geospatial file that its path is provided with the request
+              tags:
+                - one_class_svm
+              requestBody:
+                required: true
+                content:
+                  application/x-www-form-urlencoded:
+                    schema:
+                      type: object
+                      properties:
+                        resource:
+                          type: string
+                          description: The geospatial file path.
+                        resource_type:
+                          type: string
+                          enum: [csv, shp]
+                          description: The geospatial file type
+                        response:
+                          type: string
+                          enum: [prompt, deferred]
+                          description: Determines whether the outlier detection process should be promptly initiated (*prompt*) or queued (*deferred*). In the first case, the response waits for the result, in the second the response is immediate returning a ticket corresponding to the request.
+                        columns:
+                          type: array
+                          default: null
+                          description: The columns to cluster
+                        id_column:
+                          type: string
+                          description: The column that will serve as the id
+                        degree:
+                          type: integer
+                          description: One class svm degree
+                      required:
+                        - resource
+                        - resource_type
+              responses:
+                200:
+                  description: one class svm completed and returned.
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            outliers:
+                              type: object
+                              description: The detected outliers
+                202:
+                  description: Accepted for processing, but outlier detection has not been completed.
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          ticket:
+                            type: string
+                            description: The ticket corresponding to the request.
+                          endpoint:
+                            type: string
+                            description: The *resource* endpoint to get the resulting resource when ready.
+                          status:
+                            type: string
+                            description: The *status* endpoint to poll for the status of the request.
+                  links:
+                    GetStatus:
+                      operationId: getStatus
+                      parameters:
+                        ticket: '$response.body#/ticket'
+                      description: The `ticket` value returned in the response can be used as the `ticket` parameter in `GET /status/{ticket}`.
+                400:
+                  description: Client error.
+    """
     form = OCSVMPathForm()
     validate_form(form, mainLogger)
     mainLogger.info(f"Starting /one_class_svm/path with file: {form.resource.data}")
